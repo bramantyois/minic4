@@ -49,3 +49,19 @@ def test_string_to_board():
     test_arr[1, 0] = PLAYER2
 
     assert (ret_arr == test_arr).all()
+
+
+def test_apply_player_action():
+    from agents.common import apply_player_action
+
+    test_arr = np.full((2, 2), NO_PLAYER, dtype=BoardPiece)
+    test_arr[1, 1] = PLAYER1
+    test_arr[1, 0] = PLAYER2
+
+    ret = apply_player_action(test_arr, 0, PLAYER1)
+
+    test_arr[0, 0] = PLAYER1
+
+    assert (ret.dtype == BoardPiece)
+    assert ((test_arr==ret).all())
+

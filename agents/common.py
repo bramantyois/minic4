@@ -89,7 +89,7 @@ def string_to_board(pp_board: str) -> np.ndarray:
     mat_split = split[1:-2]
 
     for row, r_str in enumerate(mat_split):
-        splat = r_str[1:-1] #throw out '|'
+        splat = r_str[1:-1]
 
         for col in range(num_cols):
             c_str = splat[col*2]
@@ -112,7 +112,16 @@ def apply_player_action(
     Sets board[i, action] = player, where i is the lowest open row. The modified
     board is returned. If copy is True, makes a copy of the board before modifying it.
     """
-    raise NotImplementedError()
+    zero = np.max(np.where(board[:, action] == NO_PLAYER))
+
+    if copy:
+        ret = board.copy()
+        ret[zero, action] = player
+        return ret
+    else:
+        board[zero, action] = player
+        return board
+
 
 def connected_four(
     board: np.ndarray, player: BoardPiece, last_action: Optional[PlayerAction] = None,
@@ -123,6 +132,13 @@ def connected_four(
     If desired, the last action taken (i.e. last column played) can be provided
     for potential speed optimisation.
     """
+    idx = np.where(board == player)
+    if idx.shape[0] < 4:
+        return False
+
+    #checking for hozirontal
+
+
     raise NotImplementedError()
 
 def check_end_state(
