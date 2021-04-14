@@ -14,16 +14,19 @@ PLAYER2_Print = str('O')
 
 PlayerAction = np.int8  # The column to be played
 
+
 class GameState(Enum):
     IS_WIN = 1
     IS_DRAW = -1
     STILL_PLAYING = 0
+
 
 def initialize_game_state() -> np.ndarray:
     """
     Returns an ndarray, shape (6, 7) and data type (dtype) BoardPiece, initialized to 0 (NO_PLAYER).
     """
     return np.zeros(shape=(6, 7), dtype=BoardPiece)
+
 
 def pretty_print_board(board: np.ndarray) -> str:
     """
@@ -42,7 +45,7 @@ def pretty_print_board(board: np.ndarray) -> str:
     """
     rows, cols = board.shape
 
-    ret_str = '|' + '='*cols*2 + '|' + '\n'
+    ret_str = '|' + '='*cols*2 + '|\n'
 
     for r in range(rows):
         cur_row = '|'
@@ -54,11 +57,10 @@ def pretty_print_board(board: np.ndarray) -> str:
             else:
                 cur_row += PLAYER2_Print
             cur_row += ' '
-        cur_row += '|'
+        cur_row += '|\n'
         ret_str += cur_row
-        ret_str += '\n'
 
-    ret_str += '|' + '=' * cols * 2 + '|' + '\n'
+    ret_str += '|' + '=' * cols * 2 + '|\n'
 
     cols_str = np.arange(0, cols, 1).tolist()
     cols_num = '|'
@@ -71,13 +73,37 @@ def pretty_print_board(board: np.ndarray) -> str:
     return ret_str
     # raise NotImplementedError()
 
+
 def string_to_board(pp_board: str) -> np.ndarray:
     """
     Takes the output of pretty_print_board and turns it back into an ndarray.
     This is quite useful for debugging, when the agent crashed and you have the last
     board state as a string.
     """
-    raise NotImplementedError()
+    split = pp_board.splitlines()
+    num_rows = len(split) - 3
+    num_cols = int(0.5*(len(split[0])-2))
+
+    ret = np.zeros((num_rows, num_cols))
+
+    mat_split = split[1:-2]
+
+    for row, r_str in enumerate(mat_split):
+        splat = r_str[1:-1] #throw out '|'
+
+        for col in range(num_cols):
+            c_str = splat[col*2]
+
+            if c_str == NO_PLAYER_Print:
+                ret[row, col] = NO_PLAYER
+            elif c_str == PLAYER1_Print:
+                ret[row, col] = PLAYER1
+            else:
+                ret[row, col] = PLAYER2
+
+    return ret
+    # raise NotImplementedError()
+
 
 def apply_player_action(
     board: np.ndarray, action: PlayerAction, player: BoardPiece, copy: bool = False
