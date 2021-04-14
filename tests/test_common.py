@@ -10,3 +10,19 @@ def test_initialize_game_state():
     assert ret.dtype == BoardPiece
     assert ret.shape == (6, 7)
     assert np.all(ret == NO_PLAYER)
+
+def test_pretty_print_board():
+    from agents.common import pretty_print_board
+
+    test = np.array([
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 2, 1, 0, 0, 0],
+        [0, 0, 2, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+    ])
+
+    ret = pretty_print_board(test)
+    assert isinstance(ret, str)
+

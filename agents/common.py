@@ -4,8 +4,13 @@ import numpy as np
 
 BoardPiece = np.int8  # The data type (dtype) of the board
 NO_PLAYER = BoardPiece(0)  # board[i, j] == NO_PLAYER where the position is empty
-PLAYER1 = BoardPiece(1)  # board[i, j] == PLAYER1 where player 1 has a piece
-PLAYER2 = BoardPiece(2)  # board[i, j] == PLAYER2 where player 2 has a piece
+PLAYER1 = BoardPiece(1)  # board[i, j] == PLAYER1 where player 1 (player to move first) has a piece
+PLAYER2 = BoardPiece(2)  # board[i, j] == PLAYER2 where player 2 (player to move second) has a piece
+
+BoardPiece_Print = str  # dtype for string representation of BoardPiece
+NO_PLAYER_Print = str(' ')
+PLAYER1_Print = str('X')
+PLAYER2_Print = str('O')
 
 PlayerAction = np.int8  # The column to be played
 
@@ -35,7 +40,36 @@ def pretty_print_board(board: np.ndarray) -> str:
     |==============|
     |0 1 2 3 4 5 6 |
     """
-    raise NotImplementedError()
+    rows, cols = board.shape
+
+    ret_str = '|' + '='*cols*2 + '|' + '\n'
+
+    for r in range(rows):
+        cur_row = '|'
+        for c in range(cols):
+            if board[r, c] == NO_PLAYER:
+                cur_row += NO_PLAYER_Print
+            elif board[r, c] == PLAYER1:
+                cur_row += PLAYER1_Print
+            else:
+                cur_row += PLAYER2_Print
+            cur_row += ' '
+        cur_row += '|'
+        ret_str += cur_row
+        ret_str += '\n'
+
+    ret_str += '|' + '=' * cols * 2 + '|' + '\n'
+
+    cols_str = np.arange(0, cols, 1).tolist()
+    cols_num = '|'
+    for s in cols_str:
+        cols_num += str(s)
+        cols_num += ' '
+    cols_num += '|'
+    ret_str += cols_num
+
+    return ret_str
+    # raise NotImplementedError()
 
 def string_to_board(pp_board: str) -> np.ndarray:
     """
