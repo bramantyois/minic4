@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, Callable, Tuple
 import numpy as np
 from scipy.signal import convolve2d
 
@@ -21,6 +21,13 @@ class GameState(Enum):
     IS_DRAW = -1
     STILL_PLAYING = 0
 
+class SavedState:
+    pass
+
+GenMove = Callable[
+    [np.ndarray, BoardPiece, Optional[SavedState]],  # Arguments for the generate_move function
+    Tuple[PlayerAction, Optional[SavedState]]  # Return type of the generate_move function
+]
 
 def initialize_game_state() -> np.ndarray:
     """
