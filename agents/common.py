@@ -1,16 +1,17 @@
 from enum import Enum
 from typing import Optional
 import numpy as np
+from scipy.signal import convolve2d
 
 BoardPiece = np.int8  # The data type (dtype) of the board
 NO_PLAYER = BoardPiece(0)  # board[i, j] == NO_PLAYER where the position is empty
 PLAYER1 = BoardPiece(1)  # board[i, j] == PLAYER1 where player 1 (player to move first) has a piece
 PLAYER2 = BoardPiece(2)  # board[i, j] == PLAYER2 where player 2 (player to move second) has a piece
 
-BoardPiece_Print = str  # dtype for string representation of BoardPiece
-NO_PLAYER_Print = str(' ')
-PLAYER1_Print = str('X')
-PLAYER2_Print = str('O')
+BoardPiecePrint = str  # dtype for string representation of BoardPiece
+NO_PLAYER_PRINT = BoardPiecePrint(' ')
+PLAYER1_PRINT = BoardPiecePrint('X')
+PLAYER2_PRINT = BoardPiecePrint('O')
 
 PlayerAction = np.int8  # The column to be played
 
@@ -51,11 +52,11 @@ def pretty_print_board(board: np.ndarray) -> str:
         cur_row = '|'
         for c in range(cols):
             if board[r, c] == NO_PLAYER:
-                cur_row += NO_PLAYER_Print
+                cur_row += NO_PLAYER_PRINT
             elif board[r, c] == PLAYER1:
-                cur_row += PLAYER1_Print
+                cur_row += PLAYER1_PRINT
             else:
-                cur_row += PLAYER2_Print
+                cur_row += PLAYER2_PRINT
             cur_row += ' '
         cur_row += '|\n'
         ret_str += cur_row
@@ -94,9 +95,9 @@ def string_to_board(pp_board: str) -> np.ndarray:
         for col in range(num_cols):
             c_str = splat[col*2]
 
-            if c_str == NO_PLAYER_Print:
+            if c_str == NO_PLAYER_PRINT:
                 ret[row, col] = NO_PLAYER
-            elif c_str == PLAYER1_Print:
+            elif c_str == PLAYER1_PRINT:
                 ret[row, col] = PLAYER1
             else:
                 ret[row, col] = PLAYER2
@@ -132,14 +133,33 @@ def connected_four(
     If desired, the last action taken (i.e. last column played) can be provided
     for potential speed optimisation.
     """
-    idx = np.where(board == player)
-    if idx.shape[0] < 4:
-        return False
 
-    #checking for hozirontal
+    if last_action != None:
 
+    board_bin = np.array(board == player, dtype=int)
 
-    raise NotImplementedError()
+    kernel_v = np.ones((4, 1), player)
+    conv_v = convolve2d(kernel_v, board_bin, mode='valid')
+    if (conv_v == 4).any():
+        return True
+
+    kernel_h = np.ones((1, 4), player)
+    conv_h = convolve2d(kernel_h, board_bin, mode='valid')
+    if (conv_h == 4).any():
+        return True
+
+    kernel_dl = np.zeros((4, 4), dtype=int)
+    np.fill_diagonal(kernel_dl, val=1)
+    conv_dl = convolve2d(kernel_dl, board_bin, mode='valid')
+    if (conv_dl == 4).any():
+        return True
+
+    kernel_dr = np.flipud(kernel_dl)
+    conv_dr = convolve2d(kernel_dr, board_bin, mode='valid')
+    if (conv_dr == 4).any():
+        return True
+
+    return False
 
 def check_end_state(
     board: np.ndarray, player: BoardPiece, last_action: Optional[PlayerAction] = None,
