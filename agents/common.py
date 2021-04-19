@@ -134,7 +134,7 @@ def connected_four(
     for potential speed optimisation.
     """
 
-    if last_action != None:
+    # if last_action != None:
 
     board_bin = np.array(board == player, dtype=int)
 
@@ -161,6 +161,7 @@ def connected_four(
 
     return False
 
+
 def check_end_state(
     board: np.ndarray, player: BoardPiece, last_action: Optional[PlayerAction] = None,
 ) -> GameState:
@@ -169,4 +170,9 @@ def check_end_state(
     action won (GameState.IS_WIN) or drawn (GameState.IS_DRAW) the game,
     or is play still on-going (GameState.STILL_PLAYING)?
     """
-    raise NotImplementedError()
+    if connected_four(board, player, last_action):
+        return GameState.IS_WIN
+    if not (board == NO_PLAYER).any():
+        return GameState.IS_DRAW
+
+    return GameState.STILL_PLAYING
