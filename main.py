@@ -3,6 +3,7 @@ from typing import Optional, Callable
 from agents.common import PlayerAction, BoardPiece, SavedState, GenMove
 from agents.agent_random import generate_move
 
+
 def user_move(board: np.ndarray, _player: BoardPiece, saved_state: Optional[SavedState]):
     action = PlayerAction(-1)
     while not 0 <= action < board.shape[1]:

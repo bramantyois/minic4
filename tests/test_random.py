@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def test_generate_random_move():
     from agents.agent_random import generate_move
     from agents.common import NO_PLAYER, PLAYER1, PLAYER2, BoardPiece

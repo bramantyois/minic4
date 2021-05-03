@@ -12,7 +12,7 @@ def generate_move_random(
     ret_valid = False
     top_row = board[0, :] == NO_PLAYER
     while not ret_valid:
-        action = np.random.choice(76, 1)
+        action = np.random.choice(7, 1)
         if top_row[action]:
             ret_valid = True
 
