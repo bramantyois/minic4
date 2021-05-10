@@ -120,14 +120,19 @@ def apply_player_action(
     Sets board[i, action] = player, where i is the lowest open row. The modified
     board is returned. If copy is True, makes a copy of the board before modifying it.
     """
-    zero = np.max(np.where(board[:, action] == NO_PLAYER))
 
     if copy:
         ret = board.copy()
-        ret[zero, action] = player
-        return ret
     else:
-        board[zero, action] = player
+        ret = board
+
+    valid = ret[0, action] == NO_PLAYER
+
+    if valid:
+        zero = np.max(np.where(ret[:, action] == NO_PLAYER))
+        ret[zero, action] = player
+        return board
+    else:
         return board
 
 
