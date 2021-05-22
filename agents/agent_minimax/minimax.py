@@ -16,8 +16,8 @@ kernel_dr = np.flipud(kernel_dl)
 def compute_score(convolved_board: np.ndarray) -> float:
     """
 
-    :param convolved_board:
-    :return: score of the convolved board
+    :param convolved_board: array of convolution values
+    :return: score the heuristic respective to convolution kernel
     """
     v4 = np.sum(convolved_board == 4) * 9999
     v3 = np.sum(convolved_board == 3) * 999
@@ -55,12 +55,13 @@ def get_minimax_heuristic(board: np.ndarray) -> float:
 
     return ret
 
+
 def minimax(
         board: np.ndarray,
         depth: int,
         player: BoardPiece) -> (float, PlayerAction):
     """
-    :param board: board: current board state
+    :param board: current board state
     :param depth: depth of the node
     :param player: maximizing or minimizing player
     :return:
@@ -111,127 +112,72 @@ def generate_move_minimax(
     _, action = minimax(board, depth, player)
     return action, saved_state
 
-# def minimax(
-#         board: np.ndarray,
-#         depth: int,
-#         alpha: float,
-#         beta: float,
-#         player: BoardPiece) -> (float, PlayerAction):
-#     """
-#
-#     :param board: board: current board state
-#     :param depth: depth of the node
-#     :param player: maximizing or minimizing player
-#     :return:
-#
-#     Assuming player 1 always maximizing and player 2 minimizing
-#     """
-#     move = -1
-#     if player == PLAYER1:
-#         value = -99999
-#     else:
-#         value = 99999
-#
-#     if depth == 0 or (check_end_state(board, player) != GameState.STILL_PLAYING):
-#         return get_minimax_heuristic(board), move
-#
-#     available_node = np.argwhere(board[0, :] == NO_PLAYER)[0]
-#
-#     if player == PLAYER1:
-#         for node in available_node:
-#             new_board = apply_player_action(board, node, player, True)
-#             new_val, _ = minimax(new_board, depth-1, alpha, beta, PLAYER2)
-#             if new_val > value:
-#                 value = new_val
-#                 move = node
-#             alpha = max(value, alpha)
-#             if alpha >= beta:
-#                 break
-#     else:
-#         for node in available_node:
-#             new_board = apply_player_action(board, node, player, True)
-#             new_val, _ = minimax(new_board, depth-1, alpha, beta, PLAYER1)
-#             if new_val < value:
-#                 value = new_val
-#                 move = node
-#             beta = min(value, beta)
-#             if beta <= alpha:
-#                 break
-#
-#     return value, move
+
+def minimax_ab(
+        board: np.ndarray,
+        depth: int,
+        alpha: float,
+        beta: float,
+        player: BoardPiece) -> (float, PlayerAction):
+    """
+
+    :param board:
+    :param depth:
+    :param alpha:
+    :param beta:
+    :param player:
+    """
+
+    move = -1
+
+    if player == PLAYER1:
+        value = -np.inf
+    else:
+        value = np.inf
+
+    if depth == 0 or (check_end_state(board, player) != GameState.STILL_PLAYING):
+        return get_minimax_heuristic(board), move
+
+    available_node = np.where(board[0, :] == NO_PLAYER)[0]
+    np.random.shuffle(available_node)
+
+    if player == PLAYER1:
+        for node in available_node:
+            new_board = apply_player_action(board, node, player, True)
+            new_val, _ = minimax_ab(new_board, depth - 1, alpha, beta, PLAYER2)
+            if new_val > value:
+                value = new_val
+                move = node
+            alpha = max(value, alpha)
+            if alpha >= beta:
+                break
+    else:
+        for node in available_node:
+            new_board = apply_player_action(board, node, player, True)
+            new_val, _ = minimax_ab(new_board, depth - 1, alpha, beta, PLAYER1)
+            if new_val < value:
+                value = new_val
+                move = node
+            beta = min(value, beta)
+            if beta <= alpha:
+                break
+
+    return value, move
 
 
-# def generate_move_minimax(
-#         board: np.ndarray,
-#         player: BoardPiece,
-#         saved_state: Optional[SavedState],
-#         depth: int = 4) -> Tuple[PlayerAction, Optional[SavedState]]:
-#     """
-#
-#     :param board:
-#     :param player:
-#     :param saved_state:
-#     :param depth: depth of the search tree
-#     :return:
-#     """
-#
-#     _, action = minimax(board, depth, -99999, 99999, player)
-#     return action, saved_state
-#
-#
-#
-# def minimax(
-#         board: np.ndarray,
-#         depth: int,
-#         player: BoardPiece) -> (float, PlayerAction):
-#     """
-#     :param board: board: current board state
-#     :param depth: depth of the node
-#     :param player: maximizing or minimizing player
-#     :return:
-#     Assuming player 1 always maximizing and player 2 minimizing
-#     """
-#     move = -1
-#     if player == PLAYER1:
-#         value = -99999
-#     else:
-#         value = 99999
-#
-#     if depth == 0 or (check_end_state(board, player) != GameState.STILL_PLAYING):
-#         return get_minimax_heuristic(board), move
-#
-#     available_node = np.where(board[0, :] == NO_PLAYER)[0]
-#
-#     if player == PLAYER1:
-#         for node in available_node:
-#             new_board = apply_player_action(board, node, player, True)
-#             new_val, _ = minimax(new_board, depth - 1, PLAYER2)
-#             if new_val > value:
-#                 value = new_val
-#                 move = node
-#     else:
-#         for node in available_node:
-#             new_board = apply_player_action(board, node, player, True)
-#             new_val, _ = minimax(new_board, depth - 1, PLAYER1)
-#             if new_val < value:
-#                 value = new_val
-#                 move = node
-#
-#     return value, move
+def generate_move_minimax_ab(
+        board: np.ndarray,
+        player: BoardPiece,
+        saved_state: Optional[SavedState],
+        depth: int = 2) -> Tuple[PlayerAction, Optional[SavedState]]:
+    """
 
-#
-# def generate_move_minimax(
-#         board: np.ndarray,
-#         player: BoardPiece,
-#         saved_state: Optional[SavedState],
-#         depth: int = 4) -> Tuple[PlayerAction, Optional[SavedState]]:
-#     """
-#
-#     :param board:
-#     :param saved_state:
-#     :param depth: depth of the search tree
-#     :return:
-#     """
-#
-#     _, action = minimax(board, depth, player)
-#     return action, saved_state
+    :param board:
+    :param player:
+    :param saved_state:
+    :param depth: depth of the search tree
+    :return:
+    """
+
+    _, action = minimax_ab(board, depth, -np.inf, np.inf, player)
+    return action, saved_state
