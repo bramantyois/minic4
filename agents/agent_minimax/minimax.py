@@ -4,7 +4,7 @@ from agents.common import BoardPiece, SavedState, PlayerAction, PLAYER1, PLAYER2
 from agents.common import apply_player_action, check_end_state
 from agents.common import GameState
 from scipy.signal import convolve2d
-import math
+
 
 kernel_v = np.ones((4, 1))
 kernel_h = np.ones((1, 4))
@@ -23,16 +23,17 @@ def compute_score(convolved_board: np.ndarray) -> float:
     v3 = np.sum(convolved_board == 3) * 999
     v2 = np.sum(convolved_board == 2) * 99
     v1 = np.sum(convolved_board == 1) * 9
-    vm4 = -np.sum(convolved_board == -4) * 9999
-    vm3 = -np.sum(convolved_board == -3) * 999
-    vm2 = -np.sum(convolved_board == -2) * 99
-    vm1 = -np.sum(convolved_board == -1) * 9
+    vm4 = np.sum(convolved_board == -4) * 9999
+    vm3 = np.sum(convolved_board == -3) * 999
+    vm2 = np.sum(convolved_board == -2) * 99
+    vm1 = np.sum(convolved_board == -1) * 9
 
-    return v4 + v3 + v2 + v1 + vm4 + vm3 + vm2 + vm1
+    return v4 + v3 + v2 + v1 - (vm4 + vm3 + vm2 + vm1)
 
 
 def get_minimax_heuristic(board: np.ndarray) -> float:
     """
+
     :param board: current board state
     :return: heuristic value
     """
@@ -65,7 +66,6 @@ def minimax(
     :param depth: depth of the node
     :param player: maximizing or minimizing player
     :return:
-    Assuming player 1 always maximizing and player 2 minimizing
     """
     move = -1
     if player == PLAYER1:
