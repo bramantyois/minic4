@@ -64,8 +64,8 @@ def minimax(
     """
     :param board: current board state
     :param depth: depth of the node
-    :param player: maximizing or minimizing player
-    :return:
+    :param player: PLAYER1 for maximizing agent, PLAYER2 for minimizing agent
+    :return: tuple of heuristic value and the move
     """
     move = -1
     if player == PLAYER1:
@@ -103,10 +103,11 @@ def generate_move_minimax(
         depth: int = 2) -> Tuple[PlayerAction, Optional[SavedState]]:
     """
 
-    :param board:
-    :param saved_state:
-    :param depth: depth of the search tree
-    :return:
+    :param board: current board state
+    :param player: Moving BoardPiece
+    :param saved_state: unused in this implementation
+    :param depth: depth of the search tree, optimal value is 2
+    :return: tuple of action/move and saved state
     """
 
     _, action = minimax(board, depth, player)
@@ -120,12 +121,12 @@ def minimax_ab(
         beta: float,
         player: BoardPiece) -> (float, PlayerAction):
     """
-
-    :param board:
-    :param depth:
-    :param alpha:
-    :param beta:
-    :param player:
+    :param board: current board state
+    :param depth: depth of the node
+    :param alpha: alpha value for alpha-beta pruning
+    :param beta: beta value for alpha-beta pruning
+    :param player: PLAYER1 for maximizing agent, PLAYER2 for minimizing agent
+    :return: tuple of heuristic value and the move
     """
 
     move = -1
@@ -172,11 +173,12 @@ def generate_move_minimax_ab(
         depth: int = 2) -> Tuple[PlayerAction, Optional[SavedState]]:
     """
 
-    :param board:
-    :param player:
-    :param saved_state:
-    :param depth: depth of the search tree
-    :return:
+    :param board: current board state
+    :param player: Moving BoardPiece
+    :param saved_state: unused in this implementation
+    :param depth: depth of the search tree, optimal value is 2
+    :return: tuple of action/move and saved state
+
     """
 
     _, action = minimax_ab(board, depth, -np.inf, np.inf, player)
