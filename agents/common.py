@@ -131,9 +131,9 @@ def apply_player_action(
     if valid:
         zero = np.max(np.where(ret[:, action] == NO_PLAYER))
         ret[zero, action] = player
-        return board
+        return ret
     else:
-        return board
+        return ret
 
 
 def connected_four(
