@@ -188,3 +188,15 @@ def check_end_state(
         return GameState.IS_DRAW
 
     return GameState.STILL_PLAYING
+
+def check_valid_action(
+        board: np.ndarray, action: PlayerAction) -> bool:
+    """
+    checking if given action is valid
+
+    :param board: current board state
+    :param action: action to be performed on the board
+    :return: True if action is valid
+    """
+
+    return board[0, action] == NO_PLAYER
