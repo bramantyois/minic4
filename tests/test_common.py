@@ -65,6 +65,7 @@ def test_apply_player_action():
     assert (ret.dtype == BoardPiece)
     assert ((test_arr == ret).all())
 
+
 def test_connected_four():
     from agents.common import connected_four
 
