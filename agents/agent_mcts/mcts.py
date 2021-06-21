@@ -1,24 +1,26 @@
 import numpy as np
-from typing import Optional, Tuple
 from agents.common import BoardPiece, SavedState, PlayerAction, PLAYER1, PLAYER2, NO_PLAYER
 from agents.common import apply_player_action, check_end_state, check_valid_action
 from agents.common import GameState
-from scipy.signal import convolve2d
 import math
-
-import abc
+import copy
 
 
 class State:
-    def __init__(self, board: np.ndarray):
-        """
+    """
 
-        :param board:
-        """
-        self.children = []
-        self.score = 0
-        self.n = 0
-        self.board = board
+    :param board: board representing the state current node
+    :type _children: a list containing all the children node
+    :type _n: number of trial performed for tree
+    :type _score: score value of the tree
+    :type _board: current state board
+    """
+    def __init__(self, board: np.ndarray):
+
+        self._children = []
+        self._score = 0
+        self._n = 0
+        self._board = board.copy()
 
     def backpropagate(self) -> None:
         """
@@ -27,40 +29,50 @@ class State:
 
         total_score = 0
         total_n = 0
-        for child in self.children:
+        for child in self._children:
             child.backpropagate()
-            total_score += child.score
-            total_n += child.n
-        self.score += total_score
-        self.n += total_n
+            total_score += child.get_score()
+            total_n += child.get_n()
+        self._score += total_score
+        self._n += total_n
 
     def find_child(self, board: np.ndarray):
         identical_child = None
 
         if (self.board == board).all():
-            return self.children.copy(), self.score, self.n
+            return self._children.copy(), self.score, self.n
 
-        for child in self.children:
+        for child in self._children:
             identical_child = child.find_children(board)
 
         return identical_child
 
-    @property
     def is_leaf_node(self) -> bool:
         """
         checking if the state is a leaf node
         :return:
         """
-        if not self.children:
+        if not self._children:
             return True
         else:
             return False
 
-    def get_num_n(self) -> int:
-        return self.n
+    def get_n(self) -> int:
+        return self._n
+
+    def get_score(self) -> float:
+        return self._score
+
+    def set_n(self, n: int) -> None:
+        self._n = n
+
+    def set_score(self, score) -> None:
+        if self._n <= 0:
+            self._score = score
+            self._n = 1
 
     def add_child(self, child_state):
-        self.children.append(child_state)
+        self._children.append(copy.deepcopy(child_state))
 
 
 class Connect4MCTS:
