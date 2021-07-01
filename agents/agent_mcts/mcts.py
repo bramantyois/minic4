@@ -37,15 +37,19 @@ class State:
         self._n += total_n
 
     def find_child(self, board: np.ndarray):
-        identical_child = None
+        """
+        Find the node that has the same board state
+        :param board:
+        :return: Tuple of bool and State. return none if no child having given board
+        """
+        if (self._board == board).all():
+            return True, copy.deepcopy(self)
 
-        if (self.board == board).all():
-            return self._children.copy(), self.score, self.n
-
+        ret = False, None
         for child in self._children:
-            identical_child = child.find_children(board)
+            ret = child.find_child(board)
+        return ret
 
-        return identical_child
 
     def is_leaf_node(self) -> bool:
         """
@@ -74,13 +78,20 @@ class State:
     def add_child(self, child_state):
         self._children.append(copy.deepcopy(child_state))
 
+    def get_board(self):
+        return self._board.copy()
 
 class Connect4MCTS:
     """
     implementation of Monte-carlo tree search on connect 4
     """
+    def __init__(self, player: BoardPiece, expansion_rate: int = 1):
+        """
 
-    def __init__(self, player: BoardPiece):
+        :param player:
+        :param expansion_rate:
+        """
+        self.expansion_rate = expansion_rate**1
         self.root_node = []
         self.player = player
         self.c = 2
@@ -89,6 +100,14 @@ class Connect4MCTS:
             self.competing_player = PLAYER2
         else:
             self.competing_player = PLAYER1
+
+    def set_current_board(self, board: np.ndarray):
+        ret = self.root_node.find_child(board)
+
+        if ret[0]:
+            self.root_node = ret[1]
+        else:
+            self.root_node = State(board)
 
     def rollout(self, state: State):
         """
@@ -122,18 +141,27 @@ class Connect4MCTS:
         return score
 
     def expand(self, state: State):
-        actions = np.arange(7)
+        actions = np.random.arange(7)
+        np.random.shuffle(actions)
 
         board = state.board.copy()
+
+        count = 0
         for action in actions:
             if check_valid_action(board, action):
                 new_board = apply_player_action(action, board, self.player, copy=True)
-
+                count += 1
                 for action2 in actions:
                     if check_valid_action(new_board, action2):
                         new_board_2 = apply_player_action(action, new_board, self.competing_player, copy=True)
                         new_child = State(new_board_2)
                         state.add_child(new_child.copy())
+                        count += 1
+
+                        if count >= self.expansion_rate:
+                            break
+                if count >= self.expansion_rate:
+                    break
 
     def run_iteration(self, iteration_num: int = 1):
         cur_state = self.root_node
