@@ -1,113 +1,47 @@
 import numpy as np
-from agents.common import BoardPiece, SavedState, PlayerAction, PLAYER1, PLAYER2, NO_PLAYER
+from typing import Optional
+from agents.common import BoardPiece, SavedState, PLAYER1, PLAYER2, NO_PLAYER
 from agents.common import apply_player_action, check_end_state, check_valid_action
 from agents.common import GameState
+
+from agents.agent_mcts import State
+
 import math
-import copy
 
-
-class State:
-    """
-
-    :param board: board representing the state current node
-    :type _children: a list containing all the children node
-    :type _n: number of trial performed for tree
-    :type _score: score value of the tree
-    :type _board: current state board
-    """
-    def __init__(self, board: np.ndarray):
-
-        self._children = []
-        self._score = 0
-        self._n = 0
-        self._board = board.copy()
-
-    def backpropagate(self) -> None:
-        """
-        Backpropagation. Update the intrinsic parameters of the state.
-        """
-
-        total_score = 0
-        total_n = 0
-        for child in self._children:
-            child.backpropagate()
-            total_score += child.get_score()
-            total_n += child.get_n()
-        self._score += total_score
-        self._n += total_n
-
-    def find_child(self, board: np.ndarray):
-        """
-        Find the node that has the same board state
-        :param board:
-        :return: Tuple of bool and State. return none if no child having given board
-        """
-        if (self._board == board).all():
-            return True, copy.deepcopy(self)
-
-        ret = False, None
-        for child in self._children:
-            ret = child.find_child(board)
-        return ret
-
-
-    def is_leaf_node(self) -> bool:
-        """
-        checking if the state is a leaf node
-        :return:
-        """
-        if not self._children:
-            return True
-        else:
-            return False
-
-    def get_n(self) -> int:
-        return self._n
-
-    def get_score(self) -> float:
-        return self._score
-
-    def set_n(self, n: int) -> None:
-        self._n = n
-
-    def set_score(self, score) -> None:
-        if self._n <= 0:
-            self._score = score
-            self._n = 1
-
-    def add_child(self, child_state):
-        self._children.append(copy.deepcopy(child_state))
-
-    def get_board(self):
-        return self._board.copy()
 
 class Connect4MCTS:
     """
     implementation of Monte-carlo tree search on connect 4
     """
-    def __init__(self, player: BoardPiece, expansion_rate: int = 1):
+    def __init__(self, expansion_rate: int = 1, max_iter: int = 10):
         """
 
-        :param player:
+        :param max_iter:
         :param expansion_rate:
         """
-        self.expansion_rate = expansion_rate**1
-        self.root_node = []
-        self.player = player
-        self.c = 2
+        self._expansion_rate = expansion_rate
+        self._max_iter = max_iter
+
+        self._root_node = State(board=np.zeros((6, 7)))
+        self._player = NO_PLAYER
+        self._competing_player = NO_PLAYER
+        self._c = 2
+
+    def set_player(self, player: BoardPiece):
+        self._player = player
 
         if player == PLAYER1:
-            self.competing_player = PLAYER2
+            self._competing_player = PLAYER2
         else:
-            self.competing_player = PLAYER1
+            self._competing_player = PLAYER1
 
     def set_current_board(self, board: np.ndarray):
-        ret = self.root_node.find_child(board)
+        ret = self._root_node.find_child(board)
 
         if ret[0]:
-            self.root_node = ret[1]
+            self._root_node = ret[1]
         else:
-            self.root_node = State(board)
+            self._root_node = State(board)
 
     def rollout(self, state: State):
         """
@@ -115,8 +49,8 @@ class Connect4MCTS:
         :param state: root node in which rollout will be performed. State should have zero score and zero iteration
         :return:
         """
-        cur_board = state.board
-        cur_player = self.player
+        cur_board = state.get_board()
+        cur_player = self._player
         score = 0
 
         while check_end_state(cur_board, cur_player) == GameState.STILL_PLAYING:
@@ -125,7 +59,7 @@ class Connect4MCTS:
                 if check_valid_action(cur_board, action):
                     break
 
-            cur_board = apply_player_action(cur_board, action, cur_player)
+            cur_board = apply_player_action(cur_board, action, cur_player, copy=True)
 
             if cur_player == PLAYER1:
                 cur_player = PLAYER2
@@ -133,58 +67,102 @@ class Connect4MCTS:
                 cur_player = PLAYER1
 
         end_game_state = check_end_state(cur_board, cur_player)
-        if end_game_state == GameState.IS_WIN and cur_player == self.player:
+        if end_game_state == GameState.IS_WIN and cur_player == self._player:
             score = 1  # agent winning the game
         elif end_game_state == GameState.IS_DRAW:
             score = 0.5
 
-        return score
+        state.set_score(score)
+        self._root_node.backpropagate()
 
     def expand(self, state: State):
-        actions = np.random.arange(7)
-        np.random.shuffle(actions)
+        actions_1 = np.arange(7)
+        actions_2 = np.arange(7)
+        np.random.shuffle(actions_1)
+        np.random.shuffle(actions_2)
 
-        board = state.board.copy()
+        board = state.get_board()
 
-        count = 0
-        for action in actions:
+        count_1 = 0
+        for action in actions_1:
             if check_valid_action(board, action):
-                new_board = apply_player_action(action, board, self.player, copy=True)
-                count += 1
-                for action2 in actions:
-                    if check_valid_action(new_board, action2):
-                        new_board_2 = apply_player_action(action, new_board, self.competing_player, copy=True)
-                        new_child = State(new_board_2)
-                        state.add_child(new_child.copy())
-                        count += 1
+                new_board = apply_player_action(board, action, self._player, copy=True)
 
-                        if count >= self.expansion_rate:
+                count_2 = 0
+                for action2 in actions_2:
+                    if check_valid_action(new_board, action2):
+                        new_board_2 = apply_player_action(new_board, action2, self._competing_player, copy=True)
+                        new_child = State(new_board_2)
+                        state.add_child(new_child)
+
+                        count_2 += 1
+                        if count_2 >= self._expansion_rate:
                             break
-                if count >= self.expansion_rate:
+
+                count_1 += 1
+                if count_1 >= self._expansion_rate:
                     break
 
-    def run_iteration(self, iteration_num: int = 1):
-        cur_state = self.root_node
-
-        for _ in range(iteration_num):
+    def run_iteration(self):
+        for _ in range(self._max_iter):
+            cur_state = self._root_node
             while True:
-
                 if cur_state.is_leaf_node():
-                    if cur_state.get_num_n() == 0:
-                        self.expand(cur_state)
-                        cur_state = cur_state.children[0]
+                    if cur_state.get_n() == 0:
                         self.rollout(cur_state)
                         break
                     else:
-                        self.rollout(cur_state)
+                        self.expand(cur_state)
+                        self.rollout(cur_state.get_children()[0])
+                        break
                 else:
                     idx = -1
                     ucb1 = -999
-                    for i, child in enumerate(cur_state.children):
-                        new_val = child.score + self.c * math.sqrt(cur_state.N / cur_state.n)  # check division by zero
+                    for i, child in enumerate(cur_state.get_children()):
+                        n = child.get_n()
+
+                        if n == 0:
+                            idx = i
+                            break
+                        else:
+                            new_val = \
+                                child.get_score() \
+                                + self._c * math.sqrt(math.log(cur_state.get_n()) / n)  # check division by zero
 
                         if new_val > ucb1:
                             idx = i
                             ucb1 = new_val
 
-                    cur_state = cur_state.children[idx]
+                    cur_state = cur_state.get_children()[idx]
+
+    def choose_action(self):
+        max_score = -999
+        child_idx = -1
+        for i, child in enumerate(self._root_node.get_children()):
+            score = child.get_score()
+            if max_score < score:
+                child_idx = i
+                max_score = score
+
+        winning_board = self._root_node.get_children()[child_idx].get_board() == self._player
+        cur_board = self._root_node.get_board() == self._player
+
+        bool_board = np.where(cur_board != winning_board)
+        action = bool_board[1].astype(np.int8)
+
+        return action
+
+    def generate_move_mcts(self, board: np.ndarray, player: BoardPiece, saved_state: Optional[SavedState]):
+        self.set_player(player)
+        self.set_current_board(board)
+        self.run_iteration()
+
+        action = self.choose_action()
+
+        return action, saved_state
+
+    def get_root_node(self):
+        return self._root_node
+
+    def get_player(self):
+        return self._player
