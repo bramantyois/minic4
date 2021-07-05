@@ -100,7 +100,7 @@ def generate_move_minimax(
         board: np.ndarray,
         player: BoardPiece,
         saved_state: Optional[SavedState],
-        depth: int = 2) -> Tuple[PlayerAction, Optional[SavedState]]:
+        depth: int = 1) -> Tuple[PlayerAction, Optional[SavedState]]:
     """
 
     :param board: current board state

@@ -36,6 +36,8 @@ class Connect4MCTS:
 
         self._c = 2
 
+        self.back_propagation_path = []
+
     def set_player(self, player: BoardPiece):
         self._player = player
 
@@ -49,12 +51,12 @@ class Connect4MCTS:
             self._past_player = self._player
 
     def set_current_board(self, board: np.ndarray):
-        ret = self._root_node.find_child(board)
-
-        if ret[0]:
-            self._root_node = ret[1]
-        else:
-            self._root_node = State(board)
+        # ret = self._root_node.find_child(board)
+        #
+        # if ret[0]:
+        #     self._root_node = ret[1]
+        # else:
+        self._root_node = State(board)
 
     def get_root_node(self):
         return self._root_node
@@ -70,7 +72,7 @@ class Connect4MCTS:
         """
         cur_board = state.get_board()
         cur_player = self._player
-        score = 0
+        score = -1
 
         while check_end_state(cur_board, cur_player) == GameState.STILL_PLAYING:
             while True:
@@ -89,10 +91,10 @@ class Connect4MCTS:
         if end_game_state == GameState.IS_WIN and cur_player == self._player:
             score = 1  # agent winning the game
         elif end_game_state == GameState.IS_DRAW:
-            score = 0.5
+            score = 0
 
         state.set_score(score)
-        self._root_node.backpropagate()
+        self._root_node.backpropagate(self.back_propagation_path)
 
     def expand(self, state: State):
         actions_1 = np.arange(7)
@@ -127,7 +129,7 @@ class Connect4MCTS:
             self.expand(self._root_node)
 
         cur_state = self._root_node
-
+        self.back_propagation_path = []
         while True:
             if cur_state.is_leaf_node():
                 if cur_state.get_n() == 0:
@@ -136,6 +138,7 @@ class Connect4MCTS:
                 else:
                     self.expand(cur_state)
                     if len(cur_state.get_children()) != 0:
+                        self.back_propagation_path.append(0)
                         self.rollout(cur_state.get_children()[0])
                     break
             else:
@@ -156,6 +159,7 @@ class Connect4MCTS:
                         ucb1 = new_val
 
                 cur_state = cur_state.get_children()[idx]
+                self.back_propagation_path.append(idx)
 
     def run_iteration(self):
         if self._time_curb:
@@ -173,7 +177,7 @@ class Connect4MCTS:
         max_score = -math.inf
         child_idx = -1
         for i, child in enumerate(self._root_node.get_children()):
-            score = child.get_score()
+            score = child.get_score() / child.get_n()
             if max_score < score:
                 child_idx = i
                 max_score = score

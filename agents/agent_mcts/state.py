@@ -18,23 +18,19 @@ class State:
         self._n = 0
         self._board = board.copy()
 
-    def backpropagate(self) -> None:
+    def backpropagate(self, child_list) -> None:
         """
         Backpropagation. Update the intrinsic parameters of the state.
+
+        :param child_list: list of child index. representing the back propagation path
         """
         total_score = 0
         total_n = 0
-        if len(self._children) == 0:
-            total_score = self._score
-            total_n = self._n
-        else:
-            for child in self._children:
-                child.backpropagate()
-                total_score += child.get_score()
-                total_n += child.get_n()
+        if len(child_list) > 1:
+            self._children[child_list[0]].backpropagate(child_list[1:])
 
-        self._score = total_score
-        self._n = total_n
+        self._score += self._children[child_list[0]].get_score()
+        self._n += self._children[child_list[0]].get_n()
 
     def find_child(self, board: np.ndarray):
         """

@@ -82,6 +82,7 @@ def agent_vs_agent(
     from agents.common import PLAYER1, PLAYER2, PLAYER1_PRINT, PLAYER2_PRINT, GameState
     from agents.common import initialize_game_state, pretty_print_board, apply_player_action, check_end_state
 
+    winner = []
     players = (PLAYER1, PLAYER2)
     for play_first in (1, -1):
         for init, player in zip((init_1, init_2)[::play_first], players):
@@ -117,14 +118,25 @@ def agent_vs_agent(
                         print(
                             f'{player_name} won playing {PLAYER1_PRINT if player == PLAYER1 else PLAYER2_PRINT}'
                         )
+                        winner.append(player)
                     playing = False
                     break
+        return winner
 
 
 if __name__ == "__main__":
-    agent = Connect4MCTS(curb_iter_time=True, max_t=2, max_iter=200, expansion_rate=1)
+    agent = Connect4MCTS(curb_iter_time=True, max_t=4, max_iter=100, expansion_rate=1)
 
-    # agent_vs_agent(agents.agent_minimax.generate_move, agents.agent_minimax.generate_move)
-    # human_vs_agent(agent.generate_move_mcts)
-    agent_vs_agent(agent.generate_move_mcts, agents.agent_minimax.generate_move)
-    # agent_vs_agent(agent.generate_move_mcts, agents.agent_random.generate_move)
+    human_vs_agent(agent.generate_move_mcts)
+    # winner_list = []
+    # for _ in range(100):
+    #     # r = agent_vs_agent(agents.agent_minimax.generate_move, agents.agent_minimax.generate_move)
+    #     # r = agent_vs_agent(agent.generate_move_mcts, agents.agent_minimax.generate_move)
+    #     r = agent_vs_agent(agent.generate_move_mcts, agents.agent_random.generate_move)
+    #     winner_list.append(r)
+    #
+    # winner_list = np.array(winner_list).ravel()
+    # total_game = len(winner_list)
+    # game_won_p1 = np.sum((winner_list == 1).astype(int))
+    # print('num game: {}'.format(total_game))
+    # print('game won by agent: {}'.format(game_won_p1))
