@@ -122,8 +122,9 @@ def agent_vs_agent(
 
 
 if __name__ == "__main__":
-    agent = Connect4MCTS(curb_iter_time=True, max_t=2, max_iter=200, expansion_rate=7)
+    agent = Connect4MCTS(curb_iter_time=True, max_t=2, max_iter=200, expansion_rate=1)
 
     # agent_vs_agent(agents.agent_minimax.generate_move, agents.agent_minimax.generate_move)
-    # human_vs_agent(agents.agent_minimax.generate_move)
-    human_vs_agent(agent.generate_move_mcts)
+    # human_vs_agent(agent.generate_move_mcts)
+    # agent_vs_agent(agent.generate_move_mcts, agents.agent_minimax.generate_move)
+    agent_vs_agent(agent.generate_move_mcts, agents.agent_random.generate_move)

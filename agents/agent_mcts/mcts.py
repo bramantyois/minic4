@@ -9,6 +9,7 @@ from agents.agent_mcts import State
 import math
 import time
 
+
 class Connect4MCTS:
     """
     implementation of Monte-carlo tree search on connect 4
@@ -17,7 +18,7 @@ class Connect4MCTS:
             self,
             expansion_rate: int = 1,
             curb_iter_time: bool = True,
-            max_t: float = 5,
+            max_t: float = 2,
             max_iter: int = 10):
         """
 
@@ -98,29 +99,30 @@ class Connect4MCTS:
         actions_1 = np.arange(7)
         actions_2 = np.arange(7)
 
+        np.random.shuffle(actions_1)
         np.random.shuffle(actions_2)
 
         board = state.get_board()
 
-        # count_1 = 0
-        for action in actions_1:
-            if check_valid_action(board, action):
-                new_board = apply_player_action(board, action, self._player, copy=True)
+        if check_end_state(board, self._player) == GameState.STILL_PLAYING:
+            for action in actions_1:
+                if check_valid_action(board, action):
+                    new_board = apply_player_action(board, action, self._player, copy=True)
 
-                count_2 = 0
-                for action2 in actions_2:
-                    if check_valid_action(new_board, action2):
-                        new_board_2 = apply_player_action(new_board, action2, self._competing_player, copy=True)
-                        new_child = State(new_board_2)
-                        state.add_child(new_child)
+                    count_2 = 0
+                    for action2 in actions_2:
+                        if check_valid_action(new_board, action2):
+                            new_board_2 = apply_player_action(new_board, action2, self._competing_player, copy=True)
+                            new_child = State(new_board_2)
+                            state.add_child(new_child)
 
-                        count_2 += 1
-                        if count_2 >= self._expansion_rate:
-                            break
+                            count_2 += 1
+                            if count_2 >= self._expansion_rate:
+                                break
 
-                # count_1 += 1
-                # if count_1 >= self._expansion_rate:
-                #     break
+                    # count_1 += 1
+                    # if count_1 >= self._expansion_rate:
+                    #     break
 
     def iterate(self):
         cur_state = self._root_node
@@ -136,7 +138,7 @@ class Connect4MCTS:
                     break
             else:
                 idx = -1
-                ucb1 = -999
+                ucb1 = -math.inf
                 for i, child in enumerate(cur_state.get_children()):
                     n = child.get_n()
 
@@ -144,7 +146,8 @@ class Connect4MCTS:
                         idx = i
                         break
                     else:
-                        new_val = child.get_score() + self._c * math.sqrt(math.log(self._root_node.get_n()) / n)
+                        new_val = child.get_score()/n
+                        new_val += self._c * math.sqrt(math.log(self._root_node.get_n()) / n)
 
                     if new_val > ucb1:
                         idx = i
@@ -163,7 +166,6 @@ class Connect4MCTS:
         else:
             for _ in range(self._max_iter):
                 self.iterate()
-
 
     def choose_action(self):
         max_score = -999
