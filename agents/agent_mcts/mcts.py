@@ -7,23 +7,32 @@ from agents.common import GameState
 from agents.agent_mcts import State
 
 import math
-
+import time
 
 class Connect4MCTS:
     """
     implementation of Monte-carlo tree search on connect 4
     """
-    def __init__(self, expansion_rate: int = 1, max_iter: int = 10):
+    def __init__(
+            self,
+            expansion_rate: int = 1,
+            curb_iter_time: bool = True,
+            max_t: float = 5,
+            max_iter: int = 10):
         """
 
         :param max_iter:
         :param expansion_rate:
         """
         self._expansion_rate = expansion_rate
+
+        self._time_curb = curb_iter_time
+        self._max_t = max_t
         self._max_iter = max_iter
 
         self._root_node = State(board=np.zeros((6, 7)))
         self._player = NO_PLAYER
+        self._past_player = NO_PLAYER
         self._competing_player = NO_PLAYER
         self._c = 2
 
@@ -35,6 +44,10 @@ class Connect4MCTS:
         else:
             self._competing_player = PLAYER1
 
+        if self._past_player != self._player:
+            self.flush_tree()
+            self._past_player = self._player
+
     def set_current_board(self, board: np.ndarray):
         ret = self._root_node.find_child(board)
 
@@ -42,6 +55,12 @@ class Connect4MCTS:
             self._root_node = ret[1]
         else:
             self._root_node = State(board)
+
+    def get_root_node(self):
+        return self._root_node
+
+    def get_player(self):
+        return self._player
 
     def rollout(self, state: State):
         """
@@ -78,12 +97,12 @@ class Connect4MCTS:
     def expand(self, state: State):
         actions_1 = np.arange(7)
         actions_2 = np.arange(7)
-        np.random.shuffle(actions_1)
+
         np.random.shuffle(actions_2)
 
         board = state.get_board()
 
-        count_1 = 0
+        # count_1 = 0
         for action in actions_1:
             if check_valid_action(board, action):
                 new_board = apply_player_action(board, action, self._player, copy=True)
@@ -99,41 +118,52 @@ class Connect4MCTS:
                         if count_2 >= self._expansion_rate:
                             break
 
-                count_1 += 1
-                if count_1 >= self._expansion_rate:
-                    break
+                # count_1 += 1
+                # if count_1 >= self._expansion_rate:
+                #     break
 
-    def run_iteration(self):
-        for _ in range(self._max_iter):
-            cur_state = self._root_node
-            while True:
-                if cur_state.is_leaf_node():
-                    if cur_state.get_n() == 0:
-                        self.rollout(cur_state)
+    def iterate(self):
+        cur_state = self._root_node
+        while True:
+            if cur_state.is_leaf_node():
+                if cur_state.get_n() == 0:
+                    self.rollout(cur_state)
+                    break
+                else:
+                    self.expand(cur_state)
+                    if len(cur_state.get_children()) != 0:
+                        self.rollout(cur_state.get_children()[0])
+                    break
+            else:
+                idx = -1
+                ucb1 = -999
+                for i, child in enumerate(cur_state.get_children()):
+                    n = child.get_n()
+
+                    if n == 0:
+                        idx = i
                         break
                     else:
-                        self.expand(cur_state)
-                        self.rollout(cur_state.get_children()[0])
-                        break
-                else:
-                    idx = -1
-                    ucb1 = -999
-                    for i, child in enumerate(cur_state.get_children()):
-                        n = child.get_n()
+                        new_val = child.get_score() + self._c * math.sqrt(math.log(self._root_node.get_n()) / n)
 
-                        if n == 0:
-                            idx = i
-                            break
-                        else:
-                            new_val = \
-                                child.get_score() \
-                                + self._c * math.sqrt(math.log(cur_state.get_n()) / n)  # check division by zero
+                    if new_val > ucb1:
+                        idx = i
+                        ucb1 = new_val
 
-                        if new_val > ucb1:
-                            idx = i
-                            ucb1 = new_val
+                cur_state = cur_state.get_children()[idx]
 
-                    cur_state = cur_state.get_children()[idx]
+    def run_iteration(self):
+        if self._time_curb:
+            cur_time = time.time()
+            while True:
+                self.iterate()
+                elapsed = time.time() - cur_time
+                if elapsed > self._max_t:
+                    break
+        else:
+            for _ in range(self._max_iter):
+                self.iterate()
+
 
     def choose_action(self):
         max_score = -999
@@ -161,8 +191,5 @@ class Connect4MCTS:
 
         return action, saved_state
 
-    def get_root_node(self):
-        return self._root_node
-
-    def get_player(self):
-        return self._player
+    def flush_tree(self):
+        self._root_node = State(board=np.zeros((6, 7)))
