@@ -30,8 +30,18 @@ def test_backpropagation() -> None:
     parent_node.backpropagate()
 
     assert (parent_node.get_score() == np.sum(scores))
-    assert (parent_node.get_n() == 3)
+    # assert (parent_node.get_n() == 3)
 
+    score = np.random.choice([0, 0.5, 1])
+
+    child_node_13 = State(test_board)
+    child_node_13.set_score(score)
+    parent_node.add_child(child_node_13)
+
+    parent_node.backpropagate()
+
+    assert (parent_node.get_score() == np.sum(scores) + score)
+    # assert (parent_node.get_n() == 4)
 
 def test_state_find_child():
     test_board_1 = np.full((6, 7), NO_PLAYER)

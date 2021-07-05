@@ -11,9 +11,6 @@ import time
 
 
 class Connect4MCTS:
-    """
-    implementation of Monte-carlo tree search on connect 4
-    """
     def __init__(
             self,
             expansion_rate: int = 1,
@@ -21,6 +18,7 @@ class Connect4MCTS:
             max_t: float = 2,
             max_iter: int = 10):
         """
+        Class of a Monte-Carlo tree search agent on  game of connect 4
 
         :param max_iter:
         :param expansion_rate:
@@ -35,6 +33,7 @@ class Connect4MCTS:
         self._player = NO_PLAYER
         self._past_player = NO_PLAYER
         self._competing_player = NO_PLAYER
+
         self._c = 2
 
     def set_player(self, player: BoardPiece):
@@ -99,7 +98,6 @@ class Connect4MCTS:
         actions_1 = np.arange(7)
         actions_2 = np.arange(7)
 
-        np.random.shuffle(actions_1)
         np.random.shuffle(actions_2)
 
         board = state.get_board()
@@ -125,7 +123,11 @@ class Connect4MCTS:
                     #     break
 
     def iterate(self):
+        if len(self._root_node.get_children()) == 0:
+            self.expand(self._root_node)
+
         cur_state = self._root_node
+
         while True:
             if cur_state.is_leaf_node():
                 if cur_state.get_n() == 0:
@@ -168,7 +170,7 @@ class Connect4MCTS:
                 self.iterate()
 
     def choose_action(self):
-        max_score = -999
+        max_score = -math.inf
         child_idx = -1
         for i, child in enumerate(self._root_node.get_children()):
             score = child.get_score()

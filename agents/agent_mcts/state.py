@@ -3,16 +3,16 @@ import copy
 
 
 class State:
-    """
-
-    :param board: board representing the state current node
-    :type _children: a list containing all the children node
-    :type _n: number of trial performed for tree
-    :type _score: score value of the tree
-    :type _board: current state board
-    """
     def __init__(self, board: np.ndarray):
+        """
+        Class representing a node in a tree.
 
+        :param board: board representing the state current node
+        :type self._children: a list containing all the children node
+        :type self._n: number of trial performed for tree
+        :type self._score: score value of the tree
+        :type self._board: current state board
+        """
         self._children = []
         self._score = 0
         self._n = 0
@@ -22,15 +22,19 @@ class State:
         """
         Backpropagation. Update the intrinsic parameters of the state.
         """
-
         total_score = 0
         total_n = 0
-        for child in self._children:
-            child.backpropagate()
-            total_score += child.get_score()
-            total_n += child.get_n()
-        self._score += total_score
-        self._n += total_n
+        if len(self._children) == 0:
+            total_score = self._score
+            total_n = self._n
+        else:
+            for child in self._children:
+                child.backpropagate()
+                total_score += child.get_score()
+                total_n += child.get_n()
+
+        self._score = total_score
+        self._n = total_n
 
     def find_child(self, board: np.ndarray):
         """
@@ -57,24 +61,51 @@ class State:
             return False
 
     def get_n(self) -> int:
+        """
+        Getter function returning number of simulation
+        :return: number of elapsed simulation
+        """
         return self._n
 
     def get_score(self) -> float:
+        """
+        Getter function returning the score
+        :return: score
+        """
         return self._score
 
-    def set_n(self, n: int) -> None:
-        self._n = n
+    # def set_n(self, n: int) -> None:
+    #     self._n = n
 
-    def set_score(self, score) -> None:
+    def set_score(self, score: float) -> None:
+        """
+        Setting the score of the node. Automatically increment number of step n
+
+        :param score: simulation score
+        :return: None
+        """
         if self._n <= 0:
             self._score = score
             self._n = 1
 
-    def add_child(self, child_state):
+    def add_child(self, child_state) -> None:
+        """
+        adding child state to the node
+        :param child_state: child state, should be a State. Automatically deep copy the child_state
+
+        """
         self._children.append(copy.deepcopy(child_state))
 
-    def get_board(self):
+    def get_board(self) -> np.ndarray:
+        """
+        getter function to get the current board of the State
+        :return: current board
+        """
         return self._board.copy()
 
     def get_children(self):
+        """
+        getter function to get the children of the State
+        :return: reference to the children
+        """
         return self._children

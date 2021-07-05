@@ -77,7 +77,7 @@ def agent_vs_agent(
     args_2: tuple = (),
     init_1: Callable = lambda board, player: None,
     init_2: Callable = lambda board, player: None,
-):
+) -> object:
     import time
     from agents.common import PLAYER1, PLAYER2, PLAYER1_PRINT, PLAYER2_PRINT, GameState
     from agents.common import initialize_game_state, pretty_print_board, apply_player_action, check_end_state
@@ -104,7 +104,7 @@ def agent_vs_agent(
                     f'{player_name} you are playing with {PLAYER1_PRINT if player == PLAYER1 else PLAYER2_PRINT}'
                 )
                 action, saved_state[player] = gen_move(
-                    board.copy(), player, saved_state[player], *args
+                        board.copy(), player, saved_state[player], *args
                 )
                 print(f"Move time: {time.time() - t0:.3f}s")
                 apply_player_action(board, action, player)
@@ -126,5 +126,5 @@ if __name__ == "__main__":
 
     # agent_vs_agent(agents.agent_minimax.generate_move, agents.agent_minimax.generate_move)
     # human_vs_agent(agent.generate_move_mcts)
-    # agent_vs_agent(agent.generate_move_mcts, agents.agent_minimax.generate_move)
-    agent_vs_agent(agent.generate_move_mcts, agents.agent_random.generate_move)
+    agent_vs_agent(agent.generate_move_mcts, agents.agent_minimax.generate_move)
+    # agent_vs_agent(agent.generate_move_mcts, agents.agent_random.generate_move)
