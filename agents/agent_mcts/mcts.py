@@ -1,6 +1,7 @@
 import numpy as np
-from typing import Optional
-from agents.common import BoardPiece, SavedState, PLAYER1, PLAYER2, NO_PLAYER
+from typing import Optional, List, Tuple
+
+from agents.common import BoardPiece, SavedState, PLAYER1, PLAYER2, NO_PLAYER, PlayerAction
 from agents.common import apply_player_action, check_end_state, check_valid_action
 from agents.common import GameState
 
@@ -18,7 +19,7 @@ class Connect4MCTS:
             max_t: float = 2,
             max_iter: int = 10):
         """
-        Class of a Monte-Carlo tree search agent on  game of connect 4
+        Implementation of a Monte-Carlo tree search agent on  game of connect 4
 
         :param max_iter:
         :param expansion_rate:
@@ -36,9 +37,15 @@ class Connect4MCTS:
 
         self._c = 2
 
-        self.back_propagation_path = []
+        self._back_propagation_path = []
 
-    def set_player(self, player: BoardPiece):
+    def set_player(self, player: BoardPiece) -> None:
+        """
+        Set which player the agent would play. Flush tree if the agent switches to another BoardPiece
+
+        :param player: turning agent
+        :return: None
+        """
         self._player = player
 
         if player == PLAYER1:
@@ -50,31 +57,58 @@ class Connect4MCTS:
             self.flush_tree()
             self._past_player = self._player
 
-    def set_current_board(self, board: np.ndarray):
-        # ret = self._root_node.find_child(board)
-        #
-        # if ret[0]:
-        #     self._root_node = ret[1]
-        # else:
-        self._root_node = State(board)
+    def set_current_board(self, board: np.ndarray) -> None:
+        """
+        Set the current board state in which agent would base the decision on.
+        If board state has been simulated before, the 'knowledge' tree would be transferred
 
-    def get_root_node(self):
+        :param board: current board state
+        :return: None
+        """
+        ret = self._root_node.find_child(board)
+
+        if ret[0]:
+            self._root_node = ret[1]
+        else:
+            self._root_node = State(board)
+
+    def get_root_node(self) -> State:
+        """
+        Getter function returning the root node
+        :return: root node
+        """
         return self._root_node
 
-    def get_player(self):
+    def get_player(self) -> BoardPiece:
+        """
+        Getter function returning the current BoardPiece the agent is playing
+        :return: player
+        """
         return self._player
 
-    def rollout(self, state: State):
+    def flush_tree(self) -> None:
         """
 
-        :param state: root node in which rollout will be performed. State should have zero score and zero iteration
         :return:
+        """
+        self._root_node = State(board=np.zeros((6, 7)))
+
+    def rollout(self, state: State, backprop_path: List) -> None:
+        """
+        Simulating a game starting from given state. Actions are taken randomly. When finally reaches end state,
+        root node will start back-propagating according to backprop_path
+
+        :param state: root node in which rollout will be performed. State should have zero score and zero iteration
+        :param backprop_path: list containing children index relative to root node in which back propagation would be
+                              performed
+        :return: None
         """
         cur_board = state.get_board()
         cur_player = self._player
         score = -1
 
-        while check_end_state(cur_board, cur_player) == GameState.STILL_PLAYING:
+        while ((check_end_state(cur_board, PLAYER1) == GameState.STILL_PLAYING) and
+                (check_end_state(cur_board, PLAYER2) == GameState.STILL_PLAYING)):
             while True:
                 action = np.random.choice(7)
                 if check_valid_action(cur_board, action):
@@ -87,20 +121,26 @@ class Connect4MCTS:
             else:
                 cur_player = PLAYER1
 
-        end_game_state = check_end_state(cur_board, cur_player)
-        if end_game_state == GameState.IS_WIN and cur_player == self._player:
+        end_game_state = check_end_state(cur_board, self._player)
+        if end_game_state == GameState.IS_WIN:
             score = 1  # agent winning the game
         elif end_game_state == GameState.IS_DRAW:
             score = 0
 
         state.set_score(score)
-        self._root_node.backpropagate(self.back_propagation_path)
+        self._root_node.backpropagate(backprop_path)
 
-    def expand(self, state: State):
+    def expand(self, state: State) -> None:
+        """
+        Expanding the tree by adding children to state. By default, the tree will expand at least to the number
+        of possible moves can be taken by _player. _expansion_rate will determine how the tree will further
+        expanded in respect to the actions that would be taken by _competing_player.
+
+        :param state: tree node in which expansion would be performed
+        :return: None
+        """
         actions_1 = np.arange(7)
         actions_2 = np.arange(7)
-
-        np.random.shuffle(actions_2)
 
         board = state.get_board()
 
@@ -110,6 +150,7 @@ class Connect4MCTS:
                     new_board = apply_player_action(board, action, self._player, copy=True)
 
                     count_2 = 0
+                    np.random.shuffle(actions_2)
                     for action2 in actions_2:
                         if check_valid_action(new_board, action2):
                             new_board_2 = apply_player_action(new_board, action2, self._competing_player, copy=True)
@@ -120,26 +161,28 @@ class Connect4MCTS:
                             if count_2 >= self._expansion_rate:
                                 break
 
-                    # count_1 += 1
-                    # if count_1 >= self._expansion_rate:
-                    #     break
+    def iterate(self) -> None:
+        """
+        The mcts algorithm. perform rollout when reaching a leaf node with no simulation amd will expand otherwise.
+        It will select the node that maximize the UCB1 value.
 
-    def iterate(self):
+        :return: None
+        """
         if len(self._root_node.get_children()) == 0:
             self.expand(self._root_node)
 
         cur_state = self._root_node
-        self.back_propagation_path = []
+        back_propagation_path = []
         while True:
             if cur_state.is_leaf_node():
                 if cur_state.get_n() == 0:
-                    self.rollout(cur_state)
+                    self.rollout(cur_state, back_propagation_path)
                     break
                 else:
                     self.expand(cur_state)
                     if len(cur_state.get_children()) != 0:
-                        self.back_propagation_path.append(0)
-                        self.rollout(cur_state.get_children()[0])
+                        back_propagation_path.append(0)
+                        self.rollout(cur_state.get_children()[0], back_propagation_path)
                     break
             else:
                 idx = -1
@@ -159,9 +202,15 @@ class Connect4MCTS:
                         ucb1 = new_val
 
                 cur_state = cur_state.get_children()[idx]
-                self.back_propagation_path.append(idx)
+                back_propagation_path.append(idx)
 
-    def run_iteration(self):
+    def run_iteration(self) -> None:
+        """
+        Run iteration of mcts algorithm. Stop when whether time _max_t is up or the number of iteration is bigger than
+        _max_iter
+
+        :return: None
+        """
         if self._time_curb:
             cur_time = time.time()
             while True:
@@ -173,7 +222,13 @@ class Connect4MCTS:
             for _ in range(self._max_iter):
                 self.iterate()
 
-    def choose_action(self):
+    def choose_action(self) -> BoardPiece:
+        """
+        Choose action based on scores of the root node's children. Score will be scaled by the number of simulation
+        performed to prefer immediate winning action.
+
+        :return: action for the agent
+        """
         max_score = -math.inf
         child_idx = -1
         for i, child in enumerate(self._root_node.get_children()):
@@ -190,7 +245,16 @@ class Connect4MCTS:
 
         return action
 
-    def generate_move_mcts(self, board: np.ndarray, player: BoardPiece, saved_state: Optional[SavedState]):
+    def generate_move_mcts(self, board: np.ndarray, player: BoardPiece, saved_state: Optional[SavedState]) \
+            -> Tuple[PlayerAction, SavedState]:
+        """
+        Generate action by mcts agent.
+
+        :param board: current board state
+        :param player: turning player
+        :param saved_state: unused
+        :return: tuple of choosen action and saved state
+        """
         self.set_player(player)
         self.set_current_board(board)
         self.run_iteration()
@@ -199,5 +263,3 @@ class Connect4MCTS:
 
         return action, saved_state
 
-    def flush_tree(self):
-        self._root_node = State(board=np.zeros((6, 7)))

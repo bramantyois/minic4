@@ -44,6 +44,8 @@ class State:
         ret = False, None
         for child in self._children:
             ret = child.find_child(board)
+            if ret[0]:
+                break
         return ret
 
     def is_leaf_node(self) -> bool:

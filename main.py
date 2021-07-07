@@ -125,7 +125,7 @@ def agent_vs_agent(
 
 
 if __name__ == "__main__":
-    agent = Connect4MCTS(curb_iter_time=True, max_t=4, max_iter=100, expansion_rate=1)
+    agent = Connect4MCTS(curb_iter_time=False, max_t=2, max_iter=100, expansion_rate=7)
 
     human_vs_agent(agent.generate_move_mcts)
     # winner_list = []
