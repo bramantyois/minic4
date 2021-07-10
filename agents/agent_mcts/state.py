@@ -36,7 +36,8 @@ class State:
     def find_child(self, board: np.ndarray):
         """
         Find the node that has the same board state
-        :param board:
+
+        :param board: current board state
         :return: Tuple of bool and State. return none if no child having given board
         """
         if (self._board == board).all():
@@ -52,7 +53,8 @@ class State:
     def is_leaf_node(self) -> bool:
         """
         checking if the state is a leaf node
-        :return:
+
+        :return: True if node has children
         """
         if not self._children:
             return True

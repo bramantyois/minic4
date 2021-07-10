@@ -82,7 +82,6 @@ def pretty_print_board(board: np.ndarray) -> str:
     ret_str += cols_num
 
     return ret_str
-    # raise NotImplementedError()
 
 
 def string_to_board(pp_board: str) -> np.ndarray:
@@ -148,8 +147,6 @@ def connected_four(
     If desired, the last action taken (i.e. last column played) can be provided
     for potential speed optimisation.
     """
-
-    # if last_action != None:
 
     board_bin = np.array(board == player, dtype=int)
 

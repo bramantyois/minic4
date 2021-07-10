@@ -6,6 +6,7 @@ from agents.common import apply_player_action, check_end_state, check_valid_acti
 from agents.common import GameState
 
 from agents.agent_mcts import State
+from agents.agent_mcts import get_conv_action
 
 import math
 import time
@@ -14,17 +15,25 @@ import time
 class Connect4MCTS:
     def __init__(
             self,
+            use_heuristic: bool = True,
             expansion_rate: int = 1,
-            curb_iter_time: bool = True,
+            curb_iter_time: bool = False,
             max_t: float = 2,
-            max_iter: int = 10):
+            max_iter: int = 100):
         """
         Implementation of a Monte-Carlo tree search agent on  game of connect 4
 
-        :param max_iter:
-        :param expansion_rate:
+        :type use_heuristic: using convolution heuristic if True. Otherwise random action will be chosen when simulating.
+            Note that using heuristic improves the 'intelligence' of the agent a lot
+        :type expansion_rate: dictates the expansion corresponds the action that will be taken by the competing player.
+            Only valid if use_heuristic is False
+        :type max_t: maximum time in second. iteration stops when t > max_t
+        :type max_iter: number of maximum iteration
+        :type curb_iter_time: use time limit instead of iteration number
         """
         self._expansion_rate = expansion_rate
+
+        self._use_heuristic = use_heuristic
 
         self._time_curb = curb_iter_time
         self._max_t = max_t
@@ -90,8 +99,9 @@ class Connect4MCTS:
 
     def flush_tree(self) -> None:
         """
+        Setting the root node to a blank board. Used this when changing player
 
-        :return:
+        :return:None
         """
         self._root_node = State(board=np.zeros((6, 7)))
 
@@ -102,7 +112,7 @@ class Connect4MCTS:
 
         :param state: root node in which rollout will be performed. State should have zero score and zero iteration
         :param backprop_path: list containing children index relative to root node in which back propagation would be
-                              performed
+            performed
         :return: None
         """
         cur_board = state.get_board()
@@ -111,10 +121,14 @@ class Connect4MCTS:
 
         while ((check_end_state(cur_board, PLAYER1) == GameState.STILL_PLAYING) and
                 (check_end_state(cur_board, PLAYER2) == GameState.STILL_PLAYING)):
-            while True:
-                action = np.random.choice(7)
-                if check_valid_action(cur_board, action):
-                    break
+
+            if self._use_heuristic:
+                action = get_conv_action(cur_board, cur_player)
+            else:
+                while True:
+                    action = np.random.choice(7)
+                    if check_valid_action(cur_board, action):
+                        break
 
             cur_board = apply_player_action(cur_board, action, cur_player, copy=True)
 
@@ -151,17 +165,23 @@ class Connect4MCTS:
                 if check_valid_action(board, action):
                     new_board = apply_player_action(board, action, self._player, copy=True)
 
-                    count_2 = 0
-                    np.random.shuffle(actions_2)
-                    for action2 in actions_2:
-                        if check_valid_action(new_board, action2):
-                            new_board_2 = apply_player_action(new_board, action2, self._competing_player, copy=True)
-                            new_child = State(new_board_2)
-                            state.add_child(new_child)
+                    if self._use_heuristic:
+                        action2 = get_conv_action(new_board, self._competing_player)
+                        new_board_2 = apply_player_action(new_board, action2, self._competing_player, copy=True)
+                        new_child = State(new_board_2)
+                        state.add_child(new_child)
+                    else:
+                        count_2 = 0
+                        np.random.shuffle(actions_2)
+                        for action2 in actions_2:
+                            if check_valid_action(new_board, action2):
+                                new_board_2 = apply_player_action(new_board, action2, self._competing_player, copy=True)
+                                new_child = State(new_board_2)
+                                state.add_child(new_child)
 
-                            count_2 += 1
-                            if count_2 >= self._expansion_rate:
-                                break
+                                count_2 += 1
+                                if count_2 >= self._expansion_rate:
+                                    break
 
     def iterate(self) -> None:
         """
@@ -255,7 +275,7 @@ class Connect4MCTS:
         :param board: current board state
         :param player: turning player
         :param saved_state: unused
-        :return: tuple of choosen action and saved state
+        :return: tuple of chosen action and saved state
         """
         self.set_player(player)
         self.set_current_board(board)

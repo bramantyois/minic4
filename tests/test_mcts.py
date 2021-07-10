@@ -118,7 +118,7 @@ def test_mcts_run_iteration():
 
 def test_mcts_choose_action():
     """
-    given a tree, choose an action that maximize score in the shortest step
+    given a tree, choose an action that maximize score in the smallest step count
     """
     init_board = np.full((6, 7), NO_PLAYER)
 
