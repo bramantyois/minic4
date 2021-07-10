@@ -86,14 +86,6 @@ class State:
             self._score = score
             self._n = 1
 
-    def add_child(self, child_state) -> None:
-        """
-        adding child state to the node
-        :param child_state: child state, should be a State. Automatically deep copy the child_state
-
-        """
-        self._children.append(copy.deepcopy(child_state))
-
     def get_board(self) -> np.ndarray:
         """
         getter function to get the current board of the State
@@ -107,3 +99,11 @@ class State:
         :return: reference to the children
         """
         return self._children
+
+    def add_child(self, child_state) -> None:
+        """
+        adding child state to the node
+        :param child_state: child state, should be a State. Automatically deep copy the child_state
+
+        """
+        self._children.append(copy.deepcopy(child_state))
