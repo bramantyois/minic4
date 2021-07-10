@@ -75,6 +75,7 @@ class Connect4MCTS:
     def get_root_node(self) -> State:
         """
         Getter function returning the root node
+
         :return: root node
         """
         return self._root_node
@@ -82,6 +83,7 @@ class Connect4MCTS:
     def get_player(self) -> BoardPiece:
         """
         Getter function returning the current BoardPiece the agent is playing
+
         :return: player
         """
         return self._player
@@ -105,7 +107,7 @@ class Connect4MCTS:
         """
         cur_board = state.get_board()
         cur_player = self._player
-        score = -1
+        score = 0
 
         while ((check_end_state(cur_board, PLAYER1) == GameState.STILL_PLAYING) and
                 (check_end_state(cur_board, PLAYER2) == GameState.STILL_PLAYING)):
@@ -125,7 +127,7 @@ class Connect4MCTS:
         if end_game_state == GameState.IS_WIN:
             score = 1  # agent winning the game
         elif end_game_state == GameState.IS_DRAW:
-            score = 0
+            score = 0.5
 
         state.set_score(score)
         self._root_node.backpropagate(backprop_path)

@@ -40,7 +40,7 @@ def test_backpropagation():
 
     parent_node.backpropagate([2])
 
-    assert (parent_node.get_score() == (scores[0]+scores[1]+ score) )
+    assert (parent_node.get_score() == (scores[0]+scores[1] + score))
     # assert (parent_node.get_n() == 4)
 
 

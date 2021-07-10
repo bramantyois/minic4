@@ -30,7 +30,8 @@ class State:
             self._children[child_list[0]].backpropagate(child_list[1:])
 
         self._score += self._children[child_list[0]].get_score()
-        self._n += self._children[child_list[0]].get_n()
+        # self._n += self._children[child_list[0]].get_n()
+        self._n += 1
 
     def find_child(self, board: np.ndarray):
         """

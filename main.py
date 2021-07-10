@@ -5,6 +5,7 @@ import agents.agent_minimax
 import agents.agent_random
 from agents.agent_mcts import Connect4MCTS
 
+
 def user_move(board: np.ndarray, _player: BoardPiece, saved_state: Optional[SavedState]):
     action = PlayerAction(-1)
     while not 0 <= action < board.shape[1]:
@@ -125,7 +126,7 @@ def agent_vs_agent(
 
 
 if __name__ == "__main__":
-    agent = Connect4MCTS(curb_iter_time=False, max_t=2, max_iter=100, expansion_rate=7)
+    agent = Connect4MCTS(curb_iter_time=False, max_t=2, max_iter=1000, expansion_rate=1)
 
     human_vs_agent(agent.generate_move_mcts)
     # winner_list = []
